@@ -6,6 +6,14 @@ export const getToken = () => {
   return null;
 };
 
+export const notifyAuthChanged = () => {
+  if (typeof window === "undefined") return;
+  // `storage` doesn't fire in the same tab; this custom event does.
+  window.dispatchEvent(new Event("authchange"));
+  // Keep compatibility with older listeners.
+  window.dispatchEvent(new Event("storage"));
+};
+
 export const getUser = () => {
   if (typeof window !== "undefined") {
     const user = localStorage.getItem("user");
@@ -44,5 +52,6 @@ export const logoutUser = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    notifyAuthChanged();
   }
 };

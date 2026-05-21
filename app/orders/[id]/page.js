@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { toAssetPath } from "@/utils/url";
 
 import { fetchSingleOrder } from "@/redux/slices/orderSlice";
+import { getToken, isUser } from "@/utils/auth";
 
 export default function SingleOrderPage() {
   const params = useParams();
@@ -18,6 +20,7 @@ export default function SingleOrderPage() {
   // ================= FETCH =================
   useEffect(() => {
     if (params.id) {
+      if (!getToken() || !isUser()) return;
       dispatch(fetchSingleOrder(params.id));
     }
   }, [dispatch, params.id]);
@@ -67,16 +70,16 @@ export default function SingleOrderPage() {
 
               <span
                 className={`badge px-4 py-3 rounded-pill fs-6 ${
-                  singleOrder.status === "delivered"
+                  singleOrder.orderStatus === "delivered"
                     ? "bg-success"
-                    : singleOrder.status === "cancelled"
+                    : singleOrder.orderStatus === "cancelled"
                       ? "bg-danger"
-                      : singleOrder.status === "shipped"
+                      : singleOrder.orderStatus === "shipped"
                         ? "bg-info"
                         : "bg-warning text-dark"
                 }`}
               >
-                {singleOrder.status}
+                {singleOrder.orderStatus}
               </span>
             </div>
           </div>
@@ -92,10 +95,10 @@ export default function SingleOrderPage() {
                   <div className="border rounded-5 p-4 h-100">
                     <div className="d-flex gap-3">
                       {/* IMAGE */}
-                      {item.productId?.image ? (
-                        <img
-                          src={toAssetPath(item.productId.image)}
-                          alt={item.productId?.title || "Book"}
+                      {item.product?.image ? (
+                        <Image
+                          src={toAssetPath(item.product.image)}
+                          alt={item.product?.title || "Book"}
                           width={90}
                           height={120}
                           className="rounded-3 object-fit-cover"
@@ -114,12 +117,12 @@ export default function SingleOrderPage() {
 
                       {/* DETAILS */}
                       <div>
-                        <h5 className="fw-bold">{item.productId?.title}</h5>
+                        <h5 className="fw-bold">{item.product?.title}</h5>
 
-                        <p className="text-muted">{item.productId?.author}</p>
+                        <p className="text-muted">{item.product?.author}</p>
 
                         <h5 className="text-success fw-bold">
-                          ₹{item.productId?.price}
+                          ₹{item.product?.price}
                         </h5>
 
                         <span className="badge bg-dark">
@@ -145,7 +148,7 @@ export default function SingleOrderPage() {
             <div className="mt-5 d-flex justify-content-between align-items-center flex-wrap border-top pt-4">
               <div>
                 <h3 className="fw-bold text-success">
-                  Total Amount: ₹{singleOrder.totalAmount}
+                  Total Amount: ₹{singleOrder.totalPrice}
                 </h3>
 
                 <p className="text-muted mb-0">

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import api from "@/lib/api";
 import { getErrorMessage } from "@/utils/url";
+import { notifyAuthChanged } from "@/utils/auth";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -32,22 +33,61 @@ export default function SignupPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Frontend validation (basic UX, backend remains source of truth)
+    const email = formData.email?.trim();
+    const password = formData.password || "";
+    const firstName = formData.firstName?.trim();
+    const lastName = formData.lastName?.trim();
+
+    if (!firstName) {
+      toast.error("First name is required");
+      return;
+    }
+
+    if (!lastName) {
+      toast.error("Last name is required");
+      return;
+    }
+
+    if (!email) {
+      toast.error("Email is required");
+      return;
+    }
+
+    // Basic email format check
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailOk) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    // Simple password strength checks
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    // Require at least one letter and one number
+    const hasLetter = /[A-Za-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    if (!hasLetter || !hasNumber) {
+      toast.error("Password must include at least 1 letter and 1 number");
+      return;
+    }
+
+
     try {
       setLoading(true);
 
       const res = await api.post("/auth/signup", formData);
 
       // SAVE TOKEN
-      localStorage.setItem(
-        "token",
-        res.data.accessToken
-      );
+      localStorage.setItem("token", res.data.accessToken);
 
       // SAVE USER
-      localStorage.setItem(
-        "user",
-        JSON.stringify(res.data.data)
-      );
+      localStorage.setItem("user", JSON.stringify(res.data.data));
+
+      notifyAuthChanged();
 
       toast.success("Account created successfully 🎉");
 

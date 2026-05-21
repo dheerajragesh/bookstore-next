@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/services/api";
+import { notifyAuthChanged } from "@/utils/auth";
 
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
@@ -9,6 +10,7 @@ export const loginUser = createAsyncThunk(
 
       localStorage.setItem("token", res.data?.accessToken);
       localStorage.setItem("user", JSON.stringify(res.data?.data));
+      notifyAuthChanged();
 
       return res.data?.data;
     } catch (err) {
@@ -31,6 +33,7 @@ const authSlice = createSlice({
     logout: (state) => {
       if (typeof window !== "undefined") {
         localStorage.clear();
+        notifyAuthChanged();
       }
       state.user = null;
     },
@@ -55,4 +58,3 @@ const authSlice = createSlice({
 
 export const { logout } = authSlice.actions;
 export default authSlice.reducer;
-

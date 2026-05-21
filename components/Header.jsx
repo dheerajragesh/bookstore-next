@@ -1,67 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slices/authSlice";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import ThemeToggle from "@/app/theme/ThemeToggle";
 
-import {
-  getUser,
-  getRole,
-  isAdmin,
-  isSeller,
-  isUser,
-  logoutUser,
-} from "@/utils/auth";
+import { logoutUser, notifyAuthChanged } from "@/utils/auth";
+
+const subscribeToAuth = (callback) => {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener("authchange", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("authchange", callback);
+  };
+};
+
+const getUserJsonSnapshot = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("user");
+};
 
 export default function Header() {
   const dispatch = useDispatch();
   const router = useRouter();
-  const pathname = usePathname();
-
-  const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  const userJson = useSyncExternalStore(
+    subscribeToAuth,
+    getUserJsonSnapshot,
+    () => null
+  );
 
-  // ================= AUTH SYNC =================
-  useEffect(() => {
-    const syncAuth = () => {
-      setUser(getUser());
-      setRole(getRole());
-      setMounted(true);
-    };
+  const user = useMemo(() => {
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson);
+    } catch {
+      return null;
+    }
+  }, [userJson]);
 
-    syncAuth();
-
-    window.addEventListener("storage", syncAuth);
-
-    return () => {
-      window.removeEventListener("storage", syncAuth);
-    };
-  }, [pathname]);
-
-  // ================= CLOSE MENU ON ROUTE CHANGE =================
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+  const role = user?.role || null;
+  const isAdmin = role === "admin";
+  const isSeller = role === "seller";
+  const isUser = role === "user";
 
   // ================= LOGOUT =================
   const handleLogout = () => {
     dispatch(logout());
 
     logoutUser();
-
-    // update navbar instantly
-    window.dispatchEvent(new Event("storage"));
-
-    setUser(null);
-    setRole(null);
+    notifyAuthChanged();
+    setMenuOpen(false);
+    setQuery("");
+    setShowDropdown(false);
+    setSearchResults([]);
 
     router.push("/login");
   };
@@ -71,6 +70,9 @@ export default function Header() {
     e.preventDefault();
 
     const nextQuery = query.trim();
+    setMenuOpen(false);
+    setShowDropdown(false);
+    setSearchResults([]);
 
     if (!nextQuery) {
       router.push("/books");
@@ -84,13 +86,12 @@ export default function Header() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const trimmedQuery = query.trim();
+  const shouldShowDropdown = showDropdown && trimmedQuery.length > 0;
 
   useEffect(() => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setShowDropdown(false);
-      return;
-    }
+    const trimmed = query.trim();
+    if (!trimmed) return;
 
     const controller = new AbortController();
 
@@ -99,7 +100,7 @@ export default function Header() {
         setIsSearching(true);
 
         const res = await fetch(
-          `/api/books?search=${encodeURIComponent(query.trim())}`,
+          `/api/books?search=${encodeURIComponent(trimmed)}`,
           { signal: controller.signal }
         );
 
@@ -110,7 +111,6 @@ export default function Header() {
         const books = data?.data || data?.books || data?.result || [];
 
         setSearchResults(Array.isArray(books) ? books : []);
-        setShowDropdown(true);
       } catch (err) {
         if (err?.name !== "AbortError") {
           console.log(err);
@@ -131,6 +131,7 @@ export default function Header() {
     setShowDropdown(false);
     setSearchResults([]);
     setQuery("");
+    setMenuOpen(false);
 
     router.push(`/books/${book?._id}`);
   };
@@ -142,6 +143,7 @@ export default function Header() {
         <Link
           href="/"
           className="navbar-brand fw-bold fs-3 me-4 d-flex align-items-center gap-2"
+          onClick={() => setMenuOpen(false)}
         >
           <span
             aria-hidden
@@ -190,17 +192,18 @@ export default function Header() {
                 placeholder="Search books..."
                 value={query}
                 onChange={(e) => {
-                  setQuery(e.target.value);
-                  setShowDropdown(true);
+                  const next = e.target.value;
+                  setQuery(next);
+                  const nextTrimmed = next.trim();
+                  setShowDropdown(Boolean(nextTrimmed));
+                  if (!nextTrimmed) setSearchResults([]);
                 }}
                 onFocus={() => {
-                  if (query.trim()) {
-                    setShowDropdown(true);
-                  }
+                  setShowDropdown(Boolean(query.trim()));
                 }}
               />
 
-              {showDropdown && (
+              {shouldShowDropdown && (
                 <div
                   className="bg-white border rounded-3 shadow-sm mt-2 overflow-hidden"
                   style={{
@@ -265,7 +268,7 @@ export default function Header() {
             </li>
 
             {/* USER ONLY */}
-            {mounted && isUser() && (
+            {isUser && (
               <>
                 <li className="nav-item">
                   <Link href="/cart" className="nav-link">
@@ -288,7 +291,7 @@ export default function Header() {
             )}
 
             {/* SELLER ONLY */}
-            {mounted && isSeller() && (
+            {isSeller && (
               <>
                 <li className="nav-item">
                   <Link href="/seller/books" className="nav-link">
@@ -311,7 +314,7 @@ export default function Header() {
             )}
 
             {/* ADMIN ONLY - ADD BOOK */}
-            {mounted && isAdmin() && (
+            {isAdmin && (
               <li className="nav-item">
                 <Link href="/books/add" className="nav-link">
                   ➕ Add Book
@@ -320,7 +323,7 @@ export default function Header() {
             )}
 
             {/* ADMIN ONLY */}
-            {mounted && isAdmin() && (
+            {isAdmin && (
               <li className="nav-item">
                 <Link
                   href="/admin"
@@ -332,7 +335,7 @@ export default function Header() {
             )}
 
             {/* LOGIN / LOGOUT */}
-            {!user && mounted ? (
+            {!user ? (
               <>
                 <li className="nav-item">
                   <Link

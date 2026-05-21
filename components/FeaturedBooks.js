@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const featured = [
   {
@@ -63,11 +64,12 @@ export default function FeaturedBooks() {
             <div className="col-md-6 col-lg-3" key={book.title}>
               <div className="card border-0 shadow-sm h-100 rounded-4 overflow-hidden">
                 <div className="position-relative" style={{ height: 300 }}>
-                  <img
+                  <Image
                     src={book.image}
                     alt={book.title}
-                    className="card-img-top"
-                    style={{ height: "300px", objectFit: "cover" }}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 992px) 50vw, 25vw"
+                    style={{ objectFit: "cover" }}
                   />
 
                   <span
@@ -104,4 +106,3 @@ export default function FeaturedBooks() {
     </section>
   );
 }
-

@@ -23,15 +23,11 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <Providers>
             <Header />
-
             {children}
-
             <Footer />
-
             <ToastContainer position="top-right" />
           </Providers>
         </ThemeProvider>
-
       </body>
     </html>
   );

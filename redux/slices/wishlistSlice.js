@@ -6,7 +6,7 @@ export const fetchWishlist = createAsyncThunk(
   "wishlist/fetchWishlist",
   async (_, thunkAPI) => {
     try {
-      const res = await api.get("/wishlist/get");
+      const res = await api.get("/wishlist/getwishlist");
 
       return res.data?.data || [];
     } catch (err) {
@@ -19,7 +19,7 @@ export const addToWishlist = createAsyncThunk(
   "wishlist/addToWishlist",
   async (bookId, thunkAPI) => {
     try {
-      const res = await api.post("/wishlist/add", { bookId });
+      const res = await api.post(`/wishlist/addwishlist/${bookId}`);
 
       await thunkAPI.dispatch(fetchWishlist()).unwrap();
 
@@ -34,7 +34,7 @@ export const removeFromWishlist = createAsyncThunk(
   "wishlist/removeFromWishlist",
   async (bookId, thunkAPI) => {
     try {
-      const res = await api.delete(`/wishlist/remove/${bookId}`);
+      const res = await api.delete(`/wishlist/removewishlist/${bookId}`);
 
       await thunkAPI.dispatch(fetchWishlist()).unwrap();
 

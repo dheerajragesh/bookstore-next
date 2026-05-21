@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -11,6 +12,8 @@ export default function Hero() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const nextQuery = query.trim();
+    setShowDropdown(false);
+    setSearchResults([]);
     if (!nextQuery) return router.push("/books");
     router.push(`/books?q=${encodeURIComponent(nextQuery)}`);
   };
@@ -19,6 +22,8 @@ export default function Hero() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const trimmedQuery = query.trim();
+  const shouldShowDropdown = showDropdown && trimmedQuery.length >= 2;
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -29,8 +34,6 @@ export default function Hero() {
     // - dropdown is open (implies user intent / focus)
     // - user is actually interacting (prevents background re-renders)
     if (trimmed.length < 2 || !showDropdown) {
-      setSearchResults([]);
-      setIsSearching(false);
       return;
     }
 
@@ -123,11 +126,14 @@ export default function Hero() {
                   placeholder="Search by title, author, genre..."
                   value={query}
                   onChange={(e) => {
-                    setQuery(e.target.value);
-                    setShowDropdown(true);
+                    const next = e.target.value;
+                    setQuery(next);
+                    const nextTrimmed = next.trim();
+                    setShowDropdown(nextTrimmed.length >= 2);
+                    if (nextTrimmed.length < 2) setSearchResults([]);
                   }}
                   onFocus={() => {
-                    if (query.trim()) setShowDropdown(true);
+                    setShowDropdown(query.trim().length >= 2);
                   }}
                   aria-label="Search books"
                   style={{
@@ -137,7 +143,7 @@ export default function Hero() {
                   }}
                 />
 
-                {showDropdown && (
+                {shouldShowDropdown && (
                   <div
                     className="bg-white border rounded-3 shadow-sm mt-2 overflow-hidden"
                     style={{ position: "absolute", left: 0, right: 0, zIndex: 50 }}
@@ -241,17 +247,23 @@ export default function Hero() {
                 margin: "0 auto",
               }}
             >
-              <img
-                src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=60"
-                alt="Book collection"
-                className="img-fluid rounded-5 shadow-lg"
+              <div
+                className="rounded-5 shadow-lg position-relative overflow-hidden"
                 style={{
                   height: "min(560px, 70vh)",
                   width: "100%",
-                  objectFit: "cover",
                   border: "1px solid rgba(255,255,255,0.18)",
                 }}
-              />
+              >
+                <Image
+                  src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=60"
+                  alt="Book collection"
+                  fill
+                  priority
+                  sizes="(max-width: 992px) 100vw, 50vw"
+                  style={{ objectFit: "cover" }}
+                />
+              </div>
 
               <div
                 className="card border-0 shadow-lg rounded-4 p-3 p-lg-4 position-absolute"
@@ -283,4 +295,3 @@ export default function Hero() {
     </section>
   );
 }
-

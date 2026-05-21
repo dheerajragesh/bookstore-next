@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -9,9 +9,19 @@ import {
   getErrorMessage,
   toAssetPath,
 } from "@/utils/url";
+import { isUser } from "@/utils/auth";
 
 export default function PaymentPage() {
   const router = useRouter();
+  const directBookId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("bookId");
+    } catch {
+      return null;
+    }
+  }, []);
 
   const [cartItems, setCartItems] =
     useState([]);
@@ -40,7 +50,7 @@ export default function PaymentPage() {
         const token =
           localStorage.getItem("token");
 
-        const authed = Boolean(token);
+        const authed = Boolean(token) && isUser();
 
         if (!cancelled) {
           setIsAuthenticated(authed);
@@ -52,6 +62,33 @@ export default function PaymentPage() {
             setLoading(false);
           }
 
+          return;
+        }
+
+        // Support direct-buy flow: `/payment?bookId=<id>`
+        if (directBookId) {
+          const res = await api.get(
+            `/books/${encodeURIComponent(directBookId)}`
+          );
+
+          if (cancelled) return;
+
+          const book = res.data?.data;
+
+          if (!book?._id) {
+            setCartItems([]);
+            setLoading(false);
+            toast.error("Book not found");
+            return;
+          }
+
+          setCartItems([
+            {
+              _id: `direct:${book._id}`,
+              book,
+              quantity: 1,
+            },
+          ]);
           return;
         }
 
@@ -83,7 +120,7 @@ export default function PaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [directBookId]);
 
   // ================= TOTAL =================
   const totalPrice = cartItems.reduce(
@@ -109,25 +146,28 @@ export default function PaymentPage() {
 
       setPlacingOrder(true);
 
-      const orderItems = cartItems.map((item) => ({
-        product: item.book?._id,
-        quantity: item.quantity,
-      }));
-      console.log(
-        "ORDER ITEMS:",
-        orderItems
-      );
+      const payload = {
+        address,
+        paymentMethod,
+      };
+
+      // Direct-buy flow: backend needs explicit items (not cart).
+      if (directBookId) {
+        const orderItems = cartItems.map((item) => ({
+          productId: item.book?._id,
+          quantity: item.quantity,
+        }));
+
+        if (orderItems.some((it) => !it.productId)) {
+          toast.error("Some items are invalid");
+          return;
+        }
+
+        payload.items = orderItems;
+      }
 
       // ✅ PLACE ORDER
-      const res = await api.post(
-        "/orders/place",
-        {
-          items: orderItems,
-          totalAmount: totalPrice,
-          address,
-          paymentMethod,
-        }
-      );
+      const res = await api.post("/orders/place", payload);
 
       console.log(
         "ORDER RESPONSE:",

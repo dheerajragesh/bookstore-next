@@ -17,11 +17,9 @@ export default function CartPage() {
   const fetchCart = async () => {
     try {
       const res = await api.get("/cart/get");
-
       setCartItems(res.data.data || []);
     } catch (error) {
       console.log(error);
-
       toast.error(getErrorMessage(error, "Failed to load cart"));
     } finally {
       setLoading(false);
@@ -46,20 +44,15 @@ export default function CartPage() {
         }
 
         const res = await api.get("/cart/get");
-
         if (cancelled) return;
-
         setCartItems(res.data.data || []);
       } catch (error) {
         console.log(error);
-
         if (!cancelled) {
           toast.error(getErrorMessage(error, "Failed to load cart"));
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -74,11 +67,9 @@ export default function CartPage() {
   const updateQuantity = async (bookId, quantity) => {
     try {
       await api.put(`/cart/update/${bookId}`, { quantity });
-
       fetchCart();
     } catch (error) {
       console.log(error);
-
       toast.error(getErrorMessage(error, "Failed to update cart"));
     }
   };
@@ -87,34 +78,44 @@ export default function CartPage() {
   const removeItem = async (bookId) => {
     try {
       await api.delete(`/cart/remove/${bookId}`);
-
       toast.success("Item removed");
-
       fetchCart();
     } catch (error) {
       console.log(error);
-
       toast.error(getErrorMessage(error, "Failed to remove item"));
     }
   };
 
-  // ================= TOTAL =================
+  // ================= CLEAR CART =================
+  const clearCart = async () => {
+    try {
+      const confirmed = window.confirm("Clear all items from your cart?");
+      if (!confirmed) return;
+
+      await api.delete("/cart/clear");
+      toast.success("Cart cleared");
+      fetchCart();
+    } catch (error) {
+      console.log(error);
+      toast.error(getErrorMessage(error, "Failed to clear cart"));
+    }
+  };
+
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.book.price * item.quantity,
     0,
   );
 
-  // ================= LOADING =================
   if (loading) {
     return (
       <div className="container py-5 text-center">
-        <div className="spinner-border text-dark"></div>
+        <div className="spinner-border text-dark" />
       </div>
     );
   }
 
   if (!isAuthenticated || !isUser()) {
-  return (
+    return (
       <div className="container py-5">
         <div className="card border-0 shadow-lg rounded-4 p-5 text-center">
           <h2 className="fw-bold mb-2">Please log in</h2>
@@ -132,27 +133,36 @@ export default function CartPage() {
   return (
     <div className="container py-5">
       {/* TITLE */}
-      <div className="d-flex justify-content-between align-items-center mb-5">
+      <div className="d-flex justify-content-between align-items-center mb-5 gap-3">
         <div>
           <h1 className="fw-bold display-6">🛒 Shopping Cart</h1>
-
           <p className="text-muted">Review your selected books</p>
         </div>
 
-        <Link href="/books" className="btn btn-outline-dark rounded-pill px-4">
-          Continue Shopping
-        </Link>
+        <div className="d-flex align-items-center gap-2">
+          {cartItems.length > 0 && (
+            <button
+              className="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold"
+              onClick={clearCart}
+            >
+              Clear all
+            </button>
+          )}
+
+          <Link
+            href="/books"
+            className="btn btn-outline-dark rounded-pill px-4"
+          >
+            Continue Shopping
+          </Link>
+        </div>
       </div>
 
       {/* EMPTY CART */}
       {cartItems.length === 0 ? (
         <div className="card border-0 shadow-lg rounded-4 p-5 text-center">
           <h2 className="fw-bold mb-3">Your cart is empty</h2>
-
-          <p className="text-muted mb-4">
-            Add books to your cart to continue shopping
-          </p>
-
+          <p className="text-muted mb-4">Add books to your cart to continue shopping</p>
           <Link href="/books" className="btn btn-dark rounded-pill px-5 py-3">
             Browse Books
           </Link>
@@ -191,17 +201,19 @@ export default function CartPage() {
                       <div className="d-flex justify-content-between">
                         <div>
                           <h4 className="fw-bold">{item.book.title}</h4>
-
                           <p className="text-muted">
                             {item.book.excerpt || "Premium Book Collection"}
                           </p>
                         </div>
 
+                        {/* Improved Remove button */}
                         <button
-                          className="btn btn-sm btn-outline-danger rounded-pill"
+                          className="btn btn-outline-danger rounded-pill px-3 py-2 d-flex align-items-center gap-2"
                           onClick={() => removeItem(item.book._id)}
+                          aria-label={`Remove ${item.book.title}`}
                         >
-                          Remove
+                          <span aria-hidden>🗑️</span>
+                          <span className="d-none d-sm-inline">Remove</span>
                         </button>
                       </div>
 
@@ -219,9 +231,7 @@ export default function CartPage() {
                               -
                             </button>
 
-                            <span className="fw-bold fs-5">
-                              {item.quantity}
-                            </span>
+                            <span className="fw-bold fs-5">{item.quantity}</span>
 
                             <button
                               className="btn btn-outline-dark rounded-circle"
@@ -238,7 +248,6 @@ export default function CartPage() {
                             <h4 className="fw-bold text-success mb-0">
                               ₹{item.book.price * item.quantity}
                             </h4>
-
                             <small className="text-muted">
                               ₹{item.book.price} each
                             </small>
@@ -254,7 +263,10 @@ export default function CartPage() {
 
           {/* ORDER SUMMARY */}
           <div className="col-lg-4 col-12">
-            <div className="card border-0 shadow-lg rounded-4 p-4" style={{ position: 'sticky', top: '80px' }}>
+            <div
+              className="card border-0 shadow-lg rounded-4 p-4"
+              style={{ position: "sticky", top: "80px" }}
+            >
               <h3 className="fw-bold mb-4">Order Summary</h3>
 
               <div className="d-flex justify-content-between mb-3">
@@ -262,13 +274,11 @@ export default function CartPage() {
                   Items (
                   {cartItems.reduce((acc, item) => acc + item.quantity, 0)})
                 </span>
-
                 <span>₹{totalPrice}</span>
               </div>
 
               <div className="d-flex justify-content-between mb-3">
                 <span>Shipping</span>
-
                 <span className="text-success">Free</span>
               </div>
 
@@ -276,7 +286,6 @@ export default function CartPage() {
 
               <div className="d-flex justify-content-between mb-4">
                 <h4 className="fw-bold">Total</h4>
-
                 <h4 className="fw-bold text-success">₹{totalPrice}</h4>
               </div>
 
@@ -293,3 +302,4 @@ export default function CartPage() {
     </div>
   );
 }
+

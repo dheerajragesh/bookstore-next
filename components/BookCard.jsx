@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { toast } from "react-toastify";
 
@@ -13,6 +14,7 @@ import {
 } from "@/utils/url";
 
 import {
+  getToken,
   getUser,
   isAdmin,
   isSeller,
@@ -20,6 +22,7 @@ import {
 } from "@/utils/auth";
 
 export default function BookCard({ book }) {
+  const router = useRouter();
   const user = getUser();
 
   // ================= ADD TO CART =================
@@ -53,9 +56,9 @@ export default function BookCard({ book }) {
         );
       }
 
-      await api.post("/wishlist/add", {
-        productId: book._id,
-      });
+      await api.post(
+        `/wishlist/addwishlist/${book._id}`
+      );
 
       toast.success("Added to wishlist ❤️");
     } catch (err) {
@@ -142,6 +145,11 @@ export default function BookCard({ book }) {
           <Link
             href={`/books/${book._id}`}
             className="btn btn-dark w-100 mb-2"
+            onClick={(e) => {
+              if (getToken()) return;
+              e.preventDefault();
+              router.push(`/signup?next=${encodeURIComponent(`/books/${book._id}`)}`);
+            }}
           >
             View Details
           </Link>

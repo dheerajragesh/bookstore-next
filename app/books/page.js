@@ -1,9 +1,10 @@
-import BooksPage from "./paage";
+import BooksClient from "./books-client";
 
-export default async function BooksRoute({ searchParams }) {
-  const params = await searchParams;
-  const q = typeof params?.q === "string" ? params.q : "";
+export default function BooksRoute({ searchParams }) {
+  const q =
+    typeof searchParams?.q === "string" ? searchParams.q : "";
 
-  return <BooksPage initialQuery={q} />;
+  // Remount on query change to avoid syncing props -> state via useEffect.
+  return <BooksClient key={q} initialQuery={q} />;
 }
 

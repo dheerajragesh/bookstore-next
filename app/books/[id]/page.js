@@ -195,18 +195,17 @@ export default function SingleBookPage() {
             >
               ✏️ Edit Book
             </button>
-          ) : (
+          ) : !userRole ? (
             <button
               className="btn btn-outline-dark btn-lg rounded-pill px-5"
               onClick={() => router.push("/wishlist")}
             >
               ❤️ Wishlist
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
-
 

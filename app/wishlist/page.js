@@ -12,7 +12,8 @@ import {
   clearError,
 } from "@/redux/slices/wishlistSlice";
 
-import { getErrorMessage, toAssetPath } from "@/utils/url";
+import { toAssetPath } from "@/utils/url";
+import { getToken, isUser } from "@/utils/auth";
 
 
 export default function WishlistPage() {
@@ -27,8 +28,8 @@ export default function WishlistPage() {
   // - current: state.wishlist.wishlistItems
   const list = items ?? wishlistItems;
 
-
   useEffect(() => {
+    if (!getToken() || !isUser()) return;
     dispatch(fetchWishlist());
   }, [dispatch]);
 
@@ -57,11 +58,21 @@ export default function WishlistPage() {
     );
   }
 
-  const userRole = typeof window !== "undefined" ? getRole() : null;
-
-  // Sellers/Admins manage books (edit). Logged-in normal users should instead buy.
-  const showAdminSellerEdit = userRole === "admin" || userRole === "seller";
-
+  if (!getToken() || !isUser()) {
+    return (
+      <div className="container py-5">
+        <div className="card border-0 shadow-lg rounded-4 p-5 text-center">
+          <h2 className="fw-bold mb-2">Please log in</h2>
+          <p className="text-muted mb-4">
+            Log in to view and manage your wishlist.
+          </p>
+          <Link href="/login" className="btn btn-dark rounded-pill px-5 py-3">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

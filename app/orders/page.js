@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { toAssetPath } from "@/utils/url";
 
 import { fetchOrders, cancelOrder } from "@/redux/slices/orderSlice";
+import { getToken, isUser } from "@/utils/auth";
 
 export default function OrdersPage() {
   const dispatch = useDispatch();
@@ -15,6 +17,7 @@ export default function OrdersPage() {
 
   // ================= FETCH =================
   useEffect(() => {
+    if (!getToken() || !isUser()) return;
     dispatch(fetchOrders());
   }, [dispatch]);
 
@@ -98,16 +101,16 @@ export default function OrdersPage() {
 
                       <span
                         className={`badge px-4 py-2 rounded-pill fs-6 ${
-                          order.status === "delivered"
+                          order.orderStatus === "delivered"
                             ? "bg-success"
-                            : order.status === "cancelled"
+                            : order.orderStatus === "cancelled"
                               ? "bg-danger"
-                              : order.status === "shipped"
+                              : order.orderStatus === "shipped"
                                 ? "bg-info"
                                 : "bg-warning text-dark"
                         }`}
                       >
-                        {order.status}
+                        {order.orderStatus}
                       </span>
                     </div>
                   </div>
@@ -120,10 +123,10 @@ export default function OrdersPage() {
                         <div className="col-md-6" key={index}>
                           <div className="border rounded-4 p-3 h-100">
                             <div className="d-flex gap-3">
-                              {item.productId?.image ? (
-                                <img
-                                  src={toAssetPath(item.productId.image)}
-                                  alt={item.productId?.title || "Book"}
+                              {item.product?.image ? (
+                                <Image
+                                  src={toAssetPath(item.product.image)}
+                                  alt={item.product?.title || "Book"}
                                   width={80}
                                   height={100}
                                   className="rounded-3 object-fit-cover"
@@ -142,15 +145,15 @@ export default function OrdersPage() {
 
                               <div>
                                 <h5 className="fw-bold">
-                                  {item.productId?.title}
+                                  {item.product?.title}
                                 </h5>
 
                                 <p className="text-muted">
-                                  {item.productId?.author}
+                                  {item.product?.author}
                                 </p>
 
                                 <h6 className="fw-bold text-success">
-                                  ₹{item.productId?.price}
+                                  ₹{item.product?.price}
                                 </h6>
 
                                 <span className="badge bg-dark">
@@ -167,7 +170,7 @@ export default function OrdersPage() {
                     <div className="d-flex justify-content-between align-items-center flex-wrap mt-4 pt-4 border-top">
                       <div>
                         <h4 className="fw-bold text-success">
-                          ₹{order.totalAmount}
+                          ₹{order.totalPrice}
                         </h4>
 
                         <small className="text-muted">
@@ -183,8 +186,8 @@ export default function OrdersPage() {
                           View Details
                         </Link>
 
-                        {order.status !== "delivered" &&
-                          order.status !== "cancelled" && (
+                        {order.orderStatus !== "delivered" &&
+                          order.orderStatus !== "cancelled" && (
                             <button
                               className="btn btn-danger rounded-pill px-4"
                               onClick={() => handleCancel(order._id)}

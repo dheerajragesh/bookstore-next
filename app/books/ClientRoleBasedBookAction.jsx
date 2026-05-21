@@ -1,17 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { getRole, isAdmin, isSeller, isUser } from "@/utils/auth";
+import { useIsClient } from "@/utils/useIsClient";
 
 export default function ClientRoleBasedBookAction({ bookId }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
+  const isClient = useIsClient();
+  if (!isClient) return null;
 
   const role = getRole();
 
@@ -39,4 +34,3 @@ export default function ClientRoleBasedBookAction({ bookId }) {
 
   return null;
 }
-
