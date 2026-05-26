@@ -1,31 +1,31 @@
+const backendOriginForUploads =
+  process.env.NEXT_PUBLIC_BACKEND_ORIGIN ||
+  process.env.BACKEND_ORIGIN ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "";
+
 export const toAssetPath = (path) => {
   if (!path) return "";
 
   const normalized = String(path).replace(/\\/g, "/");
 
-  if (
-    normalized.startsWith("http://") ||
-    normalized.startsWith("https://")
-  ) {
-    try {
-      const url = new URL(normalized);
-
-      if (
-        url.pathname === "/uploads" ||
-        url.pathname.startsWith("/uploads/")
-      ) {
-        return `${url.pathname}${url.search}${url.hash}`;
-      }
-
-      return normalized;
-    } catch {
-      return normalized;
-    }
-  }
-
-  if (normalized.startsWith("//")) {
+  // If full URL already provided, keep it.
+  if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
     return normalized;
   }
+
+  // If backend returns a relative /uploads/... path, convert it to absolute URL.
+  if (normalized.startsWith("/uploads/") || normalized === "/uploads") {
+    if (backendOriginForUploads) {
+      const origin = String(backendOriginForUploads).replace(/\/$/, "");
+      return `${origin}${normalized}`;
+    }
+    // Fallback: keep relative (will rely on host-level rewrites)
+    return normalized;
+  }
+
+  // Protocol-relative
+  if (normalized.startsWith("//")) return normalized;
 
   return normalized.startsWith("/") ? normalized : `/${normalized}`;
 };

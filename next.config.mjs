@@ -1,24 +1,29 @@
 /** @type {import('next').NextConfig} */
+
 const normalizeBackendOrigin = (value) => {
-  const fallback = "http://localhost:5000";
-  if (!value || typeof value !== "string") return fallback;
+  if (!value) {
+    throw new Error("BACKEND_ORIGIN is missing in .env");
+  }
+
   const trimmed = value.trim();
-  if (!trimmed) return fallback;
 
   try {
     const url = new URL(trimmed);
-    // Users sometimes set BACKEND_ORIGIN to include `/api`. Rewrites add it again,
-    // so strip it here to prevent `/api/api/*` 404s.
+
+    // Prevent /api/api issue
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
       url.pathname = "/";
     }
+
     return url.toString().replace(/\/$/, "");
   } catch {
-    return fallback;
+    throw new Error("Invalid BACKEND_ORIGIN URL");
   }
 };
 
-const backendOrigin = normalizeBackendOrigin(process.env.BACKEND_ORIGIN);
+const backendOrigin = normalizeBackendOrigin(
+  process.env.BACKEND_ORIGIN
+);
 
 const nextConfig = {
   async rewrites() {
@@ -33,6 +38,7 @@ const nextConfig = {
       },
     ];
   },
+
   images: {
     remotePatterns: [
       {
