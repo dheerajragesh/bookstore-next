@@ -31,13 +31,9 @@ export const toAssetPath = (path) => {
 
   const uploadsPath = normalizeUploadsPath(normalized);
 
-  // If it's a backend uploads path, prefer absolute backend URL when available
+  // For uploaded images, always return `/uploads/...` so Next.js rewrites can route it
+  // via next.config.mjs (avoids env var issues in production).
   if (uploadsPath.startsWith("/uploads/") || uploadsPath === "/uploads") {
-    if (backendOriginForUploads) {
-      const origin = String(backendOriginForUploads).replace(/\/$/, "");
-      return `${origin}${uploadsPath}`;
-    }
-    // Fallback to relative `/uploads/...` (requires Next rewrites or backend to be served)
     return uploadsPath;
   }
 
