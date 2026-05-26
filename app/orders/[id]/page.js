@@ -65,8 +65,10 @@ export default function SingleOrderPage() {
               <div>
                 <h2 className="fw-bold mb-2">Order Details</h2>
 
-                <p className="mb-0">{singleOrder._id}</p>
+                <p className="mb-0">&nbsp;</p>
               </div>
+
+
 
               <span
                 className={`badge px-4 py-3 rounded-pill fs-6 ${

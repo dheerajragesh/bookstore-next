@@ -10,7 +10,10 @@ export const toAssetPath = (path) => {
     try {
       const url = new URL(normalized);
 
-      if (url.pathname === "/uploads" || url.pathname.startsWith("/uploads/")) {
+      if (
+        url.pathname === "/uploads" ||
+        url.pathname.startsWith("/uploads/")
+      ) {
         return `${url.pathname}${url.search}${url.hash}`;
       }
 
@@ -28,9 +31,18 @@ export const toAssetPath = (path) => {
 };
 
 export const getErrorMessage = (err, fallback = "Something went wrong") => {
-  return (
-    err?.response?.data?.message ||
-    err?.message ||
-    fallback
-  );
+  const message =
+    err?.response?.data?.message || err?.message || fallback;
+
+  // Axios: when backend is offline / connection refused
+  const lowMsg = String(message).toLowerCase();
+  if (
+    lowMsg.includes("econnrefused") ||
+    lowMsg.includes("connection refused") ||
+    lowMsg.includes("network error")
+  ) {
+    return "Server is not running right now. Please try again later.";
+  }
+
+  return message;
 };

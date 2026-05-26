@@ -47,9 +47,10 @@ export default function Header() {
   }, [userJson]);
 
   const role = user?.role || null;
-  const isAdmin = role === "admin";
-  const isSeller = role === "seller";
-  const isUser = role === "user";
+  const isAdminRole = role === "admin";
+  const isSellerRole = role === "seller";
+  const isUserRole = role === "user";
+
 
   // ================= LOGOUT =================
   const handleLogout = () => {
@@ -268,8 +269,14 @@ export default function Header() {
             </li>
 
             {/* USER ONLY */}
-            {isUser && (
+            {isUserRole && !isAdminRole && (
               <>
+                <li className="nav-item">
+                  <Link href="/profile" className="nav-link">
+                    My Profile
+                  </Link>
+                </li>
+
                 <li className="nav-item">
                   <Link href="/cart" className="nav-link">
                     Cart
@@ -291,39 +298,24 @@ export default function Header() {
             )}
 
             {/* SELLER ONLY */}
-            {isSeller && (
+            {isSellerRole && !isAdminRole && (
               <>
                 <li className="nav-item">
-                  <Link href="/seller/books" className="nav-link">
+                  <Link href="/books" className="nav-link">
                     My Books
                   </Link>
                 </li>
 
                 <li className="nav-item">
-                  <Link href="/books/add" className="nav-link">
-                    ➕ Add Book
-                  </Link>
-                </li>
-
-                <li className="nav-item">
                   <Link href="/seller/orders" className="nav-link">
-                    Orders
+                    📦 Orders
                   </Link>
                 </li>
               </>
             )}
 
-            {/* ADMIN ONLY - ADD BOOK */}
-            {isAdmin && (
-              <li className="nav-item">
-                <Link href="/books/add" className="nav-link">
-                  ➕ Add Book
-                </Link>
-              </li>
-            )}
-
-            {/* ADMIN ONLY */}
-            {isAdmin && (
+            {/* ADMIN ONLY: show ONLY Admin Dashboard */}
+            {isAdminRole && (
               <li className="nav-item">
                 <Link
                   href="/admin"
@@ -333,6 +325,7 @@ export default function Header() {
                 </Link>
               </li>
             )}
+
 
             {/* LOGIN / LOGOUT */}
             {!user ? (
@@ -357,15 +350,6 @@ export default function Header() {
               </>
             ) : (
               <li className="nav-item d-flex align-items-center gap-2">
-                <div className="d-none d-lg-block text-end">
-                  <div className="small text-white-50">
-                    {user?.email || ""}
-                  </div>
-
-                  <div className="small text-warning">
-                    {role || ""}
-                  </div>
-                </div>
 
                 <button
                   className="btn btn-danger"

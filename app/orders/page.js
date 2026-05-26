@@ -94,9 +94,7 @@ export default function OrdersPage() {
                   >
                     <div className="d-flex justify-content-between align-items-center flex-wrap">
                       <div>
-                        <h5 className="fw-bold">Order ID</h5>
-
-                        <small>{order._id}</small>
+                        <h5 className="fw-bold">Order</h5>
                       </div>
 
                       <span
