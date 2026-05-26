@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { toAssetPath } from "@/utils/url";
@@ -122,12 +121,14 @@ export default function OrdersPage() {
                           <div className="border rounded-4 p-3 h-100">
                             <div className="d-flex gap-3">
                               {item.product?.image ? (
-                                <Image
+                                <img
                                   src={toAssetPath(item.product.image)}
                                   alt={item.product?.title || "Book"}
                                   width={80}
                                   height={100}
                                   className="rounded-3 object-fit-cover"
+                                  style={{ objectFit: "cover" }}
+                                  loading="lazy"
                                 />
                               ) : (
                                 <div
