@@ -4,29 +4,44 @@ const backendOriginForUploads =
   process.env.NEXT_PUBLIC_API_URL ||
   "";
 
+// Normalize a backend path like `uploads/x.jpg` or `/uploads/x.jpg` into `/uploads/x.jpg`
+const normalizeUploadsPath = (p) => {
+  const s = String(p).replace(/\\/g, "/").trim();
+  if (!s) return "";
+
+  if (s === "uploads") return "/uploads";
+  if (s.startsWith("/uploads/")) return s;
+  if (s === "/uploads") return s;
+  if (s.startsWith("uploads/")) return `/${s}`;
+  return s;
+};
+
 export const toAssetPath = (path) => {
   if (!path) return "";
 
   const normalized = String(path).replace(/\\/g, "/");
 
-  // If full URL already provided, keep it.
+  // Already an absolute URL
   if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
     return normalized;
   }
 
-  // If backend returns a relative /uploads/... path, convert it to absolute URL.
-  if (normalized.startsWith("/uploads/") || normalized === "/uploads") {
-    if (backendOriginForUploads) {
-      const origin = String(backendOriginForUploads).replace(/\/$/, "");
-      return `${origin}${normalized}`;
-    }
-    // Fallback: keep relative (will rely on host-level rewrites)
-    return normalized;
-  }
-
-  // Protocol-relative
+  // Support protocol-relative URLs
   if (normalized.startsWith("//")) return normalized;
 
+  const uploadsPath = normalizeUploadsPath(normalized);
+
+  // If it's a backend uploads path, prefer absolute backend URL when available
+  if (uploadsPath.startsWith("/uploads/") || uploadsPath === "/uploads") {
+    if (backendOriginForUploads) {
+      const origin = String(backendOriginForUploads).replace(/\/$/, "");
+      return `${origin}${uploadsPath}`;
+    }
+    // Fallback to relative `/uploads/...` (requires Next rewrites or backend to be served)
+    return uploadsPath;
+  }
+
+  // Generic normalization
   return normalized.startsWith("/") ? normalized : `/${normalized}`;
 };
 
